@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
@@ -79,6 +80,7 @@ class MikroTikService {
 
     if (!result) {
       client = null;
+      connected = false;
       throw Exception('فشل تسجيل الدخول إلى MikroTik');
     }
 
@@ -99,7 +101,9 @@ class MikroTikService {
       throw Exception('MikroTik غير متصل');
     }
 
-    return await client!.talk('/ip/hotspot/user/profile/print');
+    return await client!.talk(
+      '/ip/hotspot/user/profile/print',
+    );
   }
 
   Future<List<Map<String, String>>> getUsers() async {
@@ -107,7 +111,9 @@ class MikroTikService {
       throw Exception('MikroTik غير متصل');
     }
 
-    return await client!.talk('/ip/hotspot/user/print');
+    return await client!.talk(
+      '/ip/hotspot/user/print',
+    );
   }
 
   Future<List<Map<String, String>>> getActiveUsers() async {
@@ -115,7 +121,9 @@ class MikroTikService {
       throw Exception('MikroTik غير متصل');
     }
 
-    return await client!.talk('/ip/hotspot/active/print');
+    return await client!.talk(
+      '/ip/hotspot/active/print',
+    );
   }
 
   Future<void> createUser({
@@ -199,7 +207,7 @@ class CardGenerator {
 ============================================================ */
 
 class PdfGenerator {
-  static Future<List<int>> createCardsPdf(
+  static Future<Uint8List> createCardsPdf(
     List<HotspotCard> cards,
   ) async {
     final document = pw.Document();
@@ -242,7 +250,7 @@ class PdfGenerator {
       );
     }
 
-    return document.save();
+    return Uint8List.fromList(await document.save());
   }
 
   static pw.Widget _cardWidget(HotspotCard card) {
@@ -267,9 +275,7 @@ class PdfGenerator {
               color: PdfColors.blue900,
             ),
           ),
-
           pw.SizedBox(height: 6),
-
           pw.Text(
             'HOTSPOT',
             style: pw.TextStyle(
@@ -277,9 +283,7 @@ class PdfGenerator {
               color: PdfColors.grey700,
             ),
           ),
-
           pw.SizedBox(height: 8),
-
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(
               horizontal: 8,
@@ -297,18 +301,14 @@ class PdfGenerator {
               ),
             ),
           ),
-
           pw.SizedBox(height: 5),
-
           pw.Text(
             'Password: ${card.password}',
             style: const pw.TextStyle(
               fontSize: 9,
             ),
           ),
-
           pw.SizedBox(height: 4),
-
           pw.Text(
             card.profile,
             style: const pw.TextStyle(
@@ -377,6 +377,8 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  bool get connected => mikrotik.connected;
+
   Future<void> connect() async {
     setState(() {
       loading = true;
@@ -400,7 +402,6 @@ class _HomePageState extends State<HomePage> {
           .toList();
 
       setState(() {
-        connected = true;
         status = 'متصل';
         profiles = names;
 
@@ -415,13 +416,13 @@ class _HomePageState extends State<HomePage> {
 
       showError(e.toString());
     } finally {
-      setState(() {
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
-
-  bool get connected => mikrotik.connected;
 
   Future<void> generateCards() async {
     if (!connected) {
@@ -468,6 +469,8 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
+      if (!mounted) return;
+
       setState(() {
         generatedCards = cards;
       });
@@ -482,9 +485,11 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       showError(e.toString());
     } finally {
-      setState(() {
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
 
@@ -494,9 +499,8 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    final pdf = await PdfGenerator.createCardsPdf(
-      generatedCards,
-    );
+    final Uint8List pdf =
+        await PdfGenerator.createCardsPdf(generatedCards);
 
     await Printing.layoutPdf(
       onLayout: (_) async => pdf,
@@ -569,444 +573,3 @@ class _HomePageState extends State<HomePage> {
       final found = users.where(
         (u) => u['name'] == name,
       );
-
-      if (found.isEmpty) {
-        showError('الكرت غير موجود');
-        return;
-      }
-
-      final user = found.first;
-
-      showDialog(
-        context: context,
-        builder: (_) {
-          return AlertDialog(
-            title: const Text('بيانات الكرت'),
-            content: Text(
-              'Username: ${user['name'] ?? ''}\n'
-              'Profile: ${user['profile'] ?? ''}\n'
-              'Disabled: ${user['disabled'] ?? ''}',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('إغلاق'),
-              ),
-            ],
-          );
-        },
-      );
-    } catch (e) {
-      showError(e.toString());
-    }
-  }
-
-  void showActiveUsers() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) {
-        return SizedBox(
-          height: MediaQuery.of(context).size.height * 0.8,
-          child: Column(
-            children: [
-              const SizedBox(height: 15),
-              const Text(
-                'المتصلون حاليًا',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Divider(),
-              Expanded(
-                child: activeUsers.isEmpty
-                    ? const Center(
-                        child: Text('لا يوجد مستخدمون متصلون'),
-                      )
-                    : ListView.builder(
-                        itemCount: activeUsers.length,
-                        itemBuilder: (_, index) {
-                          final u = activeUsers[index];
-
-                          return ListTile(
-                            leading: const Icon(
-                              Icons.person,
-                              color: Colors.green,
-                            ),
-                            title: Text(
-                              u['user'] ??
-                                  u['name'] ??
-                                  'Unknown',
-                            ),
-                            subtitle: Text(
-                              'IP: ${u['address'] ?? '-'}',
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: Colors.red.shade800,
-        content: Text(message),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Wi-Tbry',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          Icon(
-            connected ? Icons.cloud_done : Icons.cloud_off,
-            color: connected ? Colors.greenAccent : Colors.redAccent,
-          ),
-          const SizedBox(width: 15),
-        ],
-      ),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              connectionCard(),
-
-              const SizedBox(height: 15),
-
-              cardGeneratorCard(),
-
-              const SizedBox(height: 15),
-
-              actionButtons(),
-
-              const SizedBox(height: 15),
-
-              cardsPreview(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget connectionCard() {
-    return Card(
-      elevation: 5,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.router),
-                SizedBox(width: 10),
-                Text(
-                  'اتصال MikroTik',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            TextField(
-              controller: hostController,
-              decoration: const InputDecoration(
-                labelText: 'IP / Host',
-                prefixIcon: Icon(Icons.language),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: userController,
-              decoration: const InputDecoration(
-                labelText: 'Username',
-                prefixIcon: Icon(Icons.person),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: portController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'API Port',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  children: [
-                    const Text('SSL'),
-                    Switch(
-                      value: ssl,
-                      onChanged: (value) {
-                        setState(() {
-                          ssl = value;
-
-                          portController.text =
-                              value ? '8729' : '8728';
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: connected
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                FilledButton.icon(
-                  onPressed: loading ? null : connect,
-                  icon: const Icon(Icons.link),
-                  label: const Text('اتصال'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget cardGeneratorCard() {
-    return Card(
-      elevation: 5,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.confirmation_num),
-                SizedBox(width: 10),
-                Text(
-                  'إصدار الكروت',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            DropdownButtonFormField<String>(
-              value: selectedProfile.isEmpty
-                  ? null
-                  : selectedProfile,
-              decoration: const InputDecoration(
-                labelText: 'Hotspot Profile',
-                prefixIcon: Icon(Icons.speed),
-              ),
-              items: profiles
-                  .map(
-                    (profile) => DropdownMenuItem(
-                      value: profile,
-                      child: Text(profile),
-                    ),
-                  )
-                  .toList(),
-              onChanged: connected
-                  ? (value) {
-                      if (value == null) return;
-
-                      setState(() {
-                        selectedProfile = value;
-                      });
-                    }
-                  : null,
-            ),
-
-            const SizedBox(height: 15),
-
-            TextField(
-              controller: countController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'عدد الكروت',
-                hintText: 'من 1 إلى 5000',
-                prefixIcon: Icon(Icons.numbers),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: loading ? null : generateCards,
-                icon: const Icon(Icons.add_card),
-                label: Text(
-                  loading
-                      ? 'جاري إنشاء الكروت...'
-                      : 'إنشاء الكروت',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget actionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: connected ? loadActiveUsers : null,
-            icon: const Icon(Icons.people),
-            label: const Text('المتصلون'),
-          ),
-        ),
-
-        const SizedBox(width: 8),
-
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: connected ? searchUser : null,
-            icon: const Icon(Icons.search),
-            label: const Text('بحث'),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget cardsPreview() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'الكروت الجاهزة',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${generatedCards.length}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    color: Colors.greenAccent,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 10),
-
-            if (generatedCards.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'لم يتم إنشاء كروت بعد',
-                ),
-              )
-            else ...[
-              SizedBox(
-                height: 250,
-                child: ListView.builder(
-                  itemCount: generatedCards.length,
-                  itemBuilder: (_, index) {
-                    final card = generatedCards[index];
-
-                    return ListTile(
-                      leading: CircleAvatar(
-                        child: Text(
-                          '${index + 1}',
-                        ),
-                      ),
-                      title: Text(
-                        card.username,
-                      ),
-                      subtitle: Text(
-                        'Password: ${card.password}\n'
-                        'Profile: ${card.profile}',
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton.icon(
-                  onPressed: printCards,
-                  icon: const Icon(Icons.print),
-                  label: const Text(
-                    'تصدير / طباعة PDF',
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
