@@ -21,7 +21,7 @@ class WiTbryApp extends StatelessWidget {
       title: 'Wi-Tbry',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        brightness: Brightness.dark,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF4016F9),
           brightness: Brightness.dark,
@@ -33,9 +33,9 @@ class WiTbryApp extends StatelessWidget {
   }
 }
 
-/* ============================================================
-   MODEL
-============================================================ */
+// ============================================================
+// CARD MODEL
+// ============================================================
 
 class HotspotCard {
   final String username;
@@ -49,13 +49,12 @@ class HotspotCard {
   });
 }
 
-/* ============================================================
-   MIKROTIK SERVICE
-============================================================ */
+// ============================================================
+// MIKROTIK SERVICE
+// ============================================================
 
 class MikroTikService {
   RouterOSClient? client;
-
   bool connected = false;
 
   Future<void> connect({
@@ -176,9 +175,9 @@ class MikroTikService {
   }
 }
 
-/* ============================================================
-   CARD GENERATOR
-============================================================ */
+// ============================================================
+// CARD GENERATOR
+// ============================================================
 
 class CardGenerator {
   static final Random _random = Random();
@@ -202,9 +201,9 @@ class CardGenerator {
   }
 }
 
-/* ============================================================
-   PDF GENERATOR
-============================================================ */
+// ============================================================
+// PDF GENERATOR
+// ============================================================
 
 class PdfGenerator {
   static Future<Uint8List> createCardsPdf(
@@ -212,15 +211,22 @@ class PdfGenerator {
   ) async {
     final document = pw.Document();
 
-    const columns = 3;
-    const rows = 4;
+    const int columns = 3;
+    const int rows = 4;
+    const int cardsPerPage = columns * rows;
 
-    final cardsPerPage = columns * rows;
+    for (
+      int start = 0;
+      start < cards.length;
+      start += cardsPerPage
+    ) {
+      final int end = min(
+        start + cardsPerPage,
+        cards.length,
+      );
 
-    for (int start = 0; start < cards.length; start += cardsPerPage) {
-      final end = min(start + cardsPerPage, cards.length);
-
-      final pageCards = cards.sublist(start, end);
+      final List<HotspotCard> pageCards =
+          cards.sublist(start, end);
 
       document.addPage(
         pw.Page(
@@ -239,9 +245,9 @@ class PdfGenerator {
                     return pw.Container();
                   }
 
-                  final card = pageCards[index];
-
-                  return _cardWidget(card);
+                  return _cardWidget(
+                    pageCards[index],
+                  );
                 },
               ),
             );
@@ -250,10 +256,14 @@ class PdfGenerator {
       );
     }
 
-    return Uint8List.fromList(await document.save());
+    return Uint8List.fromList(
+      await document.save(),
+    );
   }
 
-  static pw.Widget _cardWidget(HotspotCard card) {
+  static pw.Widget _cardWidget(
+    HotspotCard card,
+  ) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
@@ -264,8 +274,10 @@ class PdfGenerator {
         ),
       ),
       child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        mainAxisAlignment: pw.MainAxisAlignment.center,
+        crossAxisAlignment:
+            pw.CrossAxisAlignment.center,
+        mainAxisAlignment:
+            pw.MainAxisAlignment.center,
         children: [
           pw.Text(
             'Wi-Tbry',
@@ -275,7 +287,9 @@ class PdfGenerator {
               color: PdfColors.blue900,
             ),
           ),
+
           pw.SizedBox(height: 6),
+
           pw.Text(
             'HOTSPOT',
             style: pw.TextStyle(
@@ -283,15 +297,19 @@ class PdfGenerator {
               color: PdfColors.grey700,
             ),
           ),
+
           pw.SizedBox(height: 8),
+
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(
+            padding:
+                const pw.EdgeInsets.symmetric(
               horizontal: 8,
               vertical: 4,
             ),
             decoration: pw.BoxDecoration(
               color: PdfColors.grey200,
-              borderRadius: pw.BorderRadius.circular(5),
+              borderRadius:
+                  pw.BorderRadius.circular(5),
             ),
             child: pw.Text(
               card.username,
@@ -301,14 +319,18 @@ class PdfGenerator {
               ),
             ),
           ),
+
           pw.SizedBox(height: 5),
+
           pw.Text(
             'Password: ${card.password}',
             style: const pw.TextStyle(
               fontSize: 9,
             ),
           ),
+
           pw.SizedBox(height: 4),
+
           pw.Text(
             card.profile,
             style: const pw.TextStyle(
@@ -322,9 +344,9 @@ class PdfGenerator {
   }
 }
 
-/* ============================================================
-   HOME PAGE
-============================================================ */
+// ============================================================
+// HOME PAGE
+// ============================================================
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -333,11 +355,18 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+// ============================================================
+// HOME PAGE STATE
+// ============================================================
+
 class _HomePageState extends State<HomePage> {
-  final MikroTikService mikrotik = MikroTikService();
+  final MikroTikService mikrotik =
+      MikroTikService();
 
   final TextEditingController hostController =
-      TextEditingController(text: '10.10.10.1');
+      TextEditingController(
+    text: '10.10.10.1',
+  );
 
   final TextEditingController userController =
       TextEditingController();
@@ -346,12 +375,17 @@ class _HomePageState extends State<HomePage> {
       TextEditingController();
 
   final TextEditingController portController =
-      TextEditingController(text: '8729');
+      TextEditingController(
+    text: '8729',
+  );
 
   final TextEditingController countController =
-      TextEditingController(text: '10');
+      TextEditingController(
+    text: '10',
+  );
 
   bool ssl = true;
+
   bool loading = false;
 
   String status = 'غير متصل';
@@ -363,6 +397,12 @@ class _HomePageState extends State<HomePage> {
   List<HotspotCard> generatedCards = [];
 
   List<Map<String, String>> activeUsers = [];
+
+  bool get connected => mikrotik.connected;
+
+  // ==========================================================
+  // DISPOSE
+  // ==========================================================
 
   @override
   void dispose() {
@@ -377,7 +417,9 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  bool get connected => mikrotik.connected;
+  // ==========================================================
+  // CONNECT
+  // ==========================================================
 
   Future<void> connect() async {
     setState(() {
@@ -390,31 +432,45 @@ class _HomePageState extends State<HomePage> {
         host: hostController.text.trim(),
         username: userController.text.trim(),
         password: passwordController.text,
-        port: int.tryParse(portController.text) ?? 8729,
+        port: int.tryParse(
+              portController.text,
+            ) ??
+            8729,
         ssl: ssl,
       );
 
-      final result = await mikrotik.getProfiles();
+      final result =
+          await mikrotik.getProfiles();
 
-      final names = result
-          .map((e) => e['name'])
+      final List<String> names = result
+          .map(
+            (e) => e['name'],
+          )
           .whereType<String>()
           .toList();
 
+      if (!mounted) return;
+
       setState(() {
         status = 'متصل';
+
         profiles = names;
 
         if (profiles.isNotEmpty) {
-          selectedProfile = profiles.first;
+          selectedProfile =
+              profiles.first;
         }
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         status = 'خطأ';
       });
 
-      showError(e.toString());
+      showError(
+        e.toString(),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -424,21 +480,36 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // ==========================================================
+  // GENERATE CARDS
+  // ==========================================================
+
   Future<void> generateCards() async {
     if (!connected) {
-      showError('اتصل بالـ MikroTik أولًا');
+      showError(
+        'اتصل بالـ MikroTik أولًا',
+      );
       return;
     }
 
-    final count = int.tryParse(countController.text);
+    final int? count =
+        int.tryParse(
+      countController.text,
+    );
 
-    if (count == null || count < 1 || count > 5000) {
-      showError('عدد الكروت يجب أن يكون من 1 إلى 5000');
+    if (count == null ||
+        count < 1 ||
+        count > 5000) {
+      showError(
+        'عدد الكروت يجب أن يكون من 1 إلى 5000',
+      );
       return;
     }
 
     if (selectedProfile.isEmpty) {
-      showError('اختر البروفايل');
+      showError(
+        'اختر البروفايل',
+      );
       return;
     }
 
@@ -448,11 +519,14 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final cards = <HotspotCard>[];
+      final List<HotspotCard> cards = [];
 
       for (int i = 0; i < count; i++) {
-        final username = CardGenerator.username();
-        final password = CardGenerator.password();
+        final String username =
+            CardGenerator.username();
+
+        final String password =
+            CardGenerator.password();
 
         await mikrotik.createUser(
           username: username,
@@ -475,7 +549,8 @@ class _HomePageState extends State<HomePage> {
         generatedCards = cards;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
             'تم إنشاء ${cards.length} كرت بنجاح',
@@ -483,7 +558,9 @@ class _HomePageState extends State<HomePage> {
         ),
       );
     } catch (e) {
-      showError(e.toString());
+      showError(
+        e.toString(),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -493,29 +570,52 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // ==========================================================
+  // PRINT CARDS
+  // ==========================================================
+
   Future<void> printCards() async {
     if (generatedCards.isEmpty) {
-      showError('لا توجد كروت للطباعة');
-      return;
-    }
-
-    final Uint8List pdf =
-        await PdfGenerator.createCardsPdf(generatedCards);
-
-    await Printing.layoutPdf(
-      onLayout: (_) async => pdf,
-      name: 'Wi-Tbry-Cards.pdf',
-    );
-  }
-
-  Future<void> loadActiveUsers() async {
-    if (!connected) {
-      showError('اتصل بالـ MikroTik أولًا');
+      showError(
+        'لا توجد كروت للطباعة',
+      );
       return;
     }
 
     try {
-      final result = await mikrotik.getActiveUsers();
+      final Uint8List pdf =
+          await PdfGenerator.createCardsPdf(
+        generatedCards,
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdf,
+        name: 'Wi-Tbry-Cards.pdf',
+      );
+    } catch (e) {
+      showError(
+        'فشل إنشاء PDF: $e',
+      );
+    }
+  }
+
+  // ==========================================================
+  // ACTIVE USERS
+  // ==========================================================
+
+  Future<void> loadActiveUsers() async {
+    if (!connected) {
+      showError(
+        'اتصل بالـ MikroTik أولًا',
+      );
+      return;
+    }
+
+    try {
+      final result =
+          await mikrotik.getActiveUsers();
+
+      if (!mounted) return;
 
       setState(() {
         activeUsers = result;
@@ -523,33 +623,53 @@ class _HomePageState extends State<HomePage> {
 
       showActiveUsers();
     } catch (e) {
-      showError(e.toString());
+      showError(
+        e.toString(),
+      );
     }
   }
 
+  // ==========================================================
+  // SEARCH USER
+  // ==========================================================
+
   Future<void> searchUser() async {
     if (!connected) {
-      showError('اتصل بالـ MikroTik أولًا');
+      showError(
+        'اتصل بالـ MikroTik أولًا',
+      );
       return;
     }
 
-    final name = await showDialog<String>(
+    final String? name =
+        await showDialog<String>(
       context: context,
       builder: (context) {
-        final controller = TextEditingController();
+        final TextEditingController controller =
+            TextEditingController();
 
         return AlertDialog(
-          title: const Text('البحث عن كرت'),
+          title: const Text(
+            'البحث عن كرت',
+          ),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'اسم المستخدم',
+            decoration:
+                const InputDecoration(
+              labelText:
+                  'اسم المستخدم',
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
+              onPressed: () {
+                Navigator.pop(
+                  context,
+                );
+              },
+              child: const Text(
+                'إلغاء',
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -558,18 +678,725 @@ class _HomePageState extends State<HomePage> {
                   controller.text.trim(),
                 );
               },
-              child: const Text('بحث'),
+              child: const Text(
+                'بحث',
+              ),
             ),
           ],
         );
       },
     );
 
-    if (name == null || name.isEmpty) return;
+    if (name == null ||
+        name.isEmpty) {
+      return;
+    }
 
     try {
-      final users = await mikrotik.getUsers();
+      final users =
+          await mikrotik.getUsers();
 
       final found = users.where(
         (u) => u['name'] == name,
       );
+
+      if (found.isEmpty) {
+        showError(
+          'الكرت غير موجود',
+        );
+        return;
+      }
+
+      final user = found.first;
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (_) {
+          return AlertDialog(
+            title: const Text(
+              'بيانات الكرت',
+            ),
+            content: Text(
+              'Username: ${user['name'] ?? ''}\n'
+              'Profile: ${user['profile'] ?? ''}\n'
+              'Disabled: ${user['disabled'] ?? ''}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(
+                    context,
+                  );
+                },
+                child: const Text(
+                  'إغلاق',
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      showError(
+        e.toString(),
+      );
+    }
+  }
+
+  // ==========================================================
+  // SHOW ACTIVE USERS
+  // ==========================================================
+
+  void showActiveUsers() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) {
+        return SizedBox(
+          height:
+              MediaQuery.of(context)
+                      .size
+                      .height *
+                  0.8,
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 15,
+              ),
+
+              const Text(
+                'المتصلون حاليًا',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight:
+                      FontWeight.bold,
+                ),
+              ),
+
+              const Divider(),
+
+              Expanded(
+                child: activeUsers.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'لا يوجد مستخدمون متصلون',
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount:
+                            activeUsers.length,
+                        itemBuilder:
+                            (_, index) {
+                          final u =
+                              activeUsers[
+                                  index];
+
+                          return ListTile(
+                            leading:
+                                const Icon(
+                              Icons.person,
+                              color: Colors
+                                  .green,
+                            ),
+                            title: Text(
+                              u['user'] ??
+                                  u['name'] ??
+                                  'Unknown',
+                            ),
+                            subtitle:
+                                Text(
+                              'IP: ${u['address'] ?? '-'}',
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================================
+  // ERROR
+  // ==========================================================
+
+  void showError(
+    String message,
+  ) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(
+      SnackBar(
+        backgroundColor:
+            Colors.red.shade800,
+        content: Text(
+          message,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Wi-Tbry',
+          style: TextStyle(
+            fontWeight:
+                FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          Icon(
+            connected
+                ? Icons.cloud_done
+                : Icons.cloud_off,
+            color: connected
+                ? Colors.greenAccent
+                : Colors.redAccent,
+          ),
+          const SizedBox(
+            width: 15,
+          ),
+        ],
+      ),
+
+      body: SafeArea(
+        child:
+            SingleChildScrollView(
+          padding:
+              const EdgeInsets.all(
+            16,
+          ),
+          child: Column(
+            children: [
+              connectionCard(),
+
+              const SizedBox(
+                height: 15,
+              ),
+
+              cardGeneratorCard(),
+
+              const SizedBox(
+                height: 15,
+              ),
+
+              actionButtons(),
+
+              const SizedBox(
+                height: 15,
+              ),
+
+              cardsPreview(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // CONNECTION CARD
+  // ==========================================================
+
+  Widget connectionCard() {
+    return Card(
+      elevation: 5,
+      child: Padding(
+        padding:
+            const EdgeInsets.all(
+          16,
+        ),
+        child: Column(
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.router,
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Text(
+                  'اتصال MikroTik',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            TextField(
+              controller:
+                  hostController,
+              decoration:
+                  const InputDecoration(
+                labelText:
+                    'IP / Host',
+                prefixIcon:
+                    Icon(
+                  Icons.language,
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 10,
+            ),
+
+            TextField(
+              controller:
+                  userController,
+              decoration:
+                  const InputDecoration(
+                labelText:
+                    'Username',
+                prefixIcon:
+                    Icon(
+                  Icons.person,
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 10,
+            ),
+
+            TextField(
+              controller:
+                  passwordController,
+              obscureText: true,
+              decoration:
+                  const InputDecoration(
+                labelText:
+                    'Password',
+                prefixIcon:
+                    Icon(
+                  Icons.lock,
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 10,
+            ),
+
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller:
+                        portController,
+                    keyboardType:
+                        TextInputType
+                            .number,
+                    decoration:
+                        const InputDecoration(
+                      labelText:
+                          'API Port',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(
+                  width: 10,
+                ),
+
+                Column(
+                  children: [
+                    const Text(
+                      'SSL',
+                    ),
+                    Switch(
+                      value: ssl,
+                      onChanged:
+                          (value) {
+                        setState(() {
+                          ssl = value;
+
+                          portController
+                                  .text =
+                              value
+                                  ? '8729'
+                                  : '8728';
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(
+              height: 10,
+            ),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    status,
+                    style:
+                        TextStyle(
+                      color: connected
+                          ? Colors
+                              .greenAccent
+                          : Colors
+                              .orangeAccent,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                FilledButton.icon(
+                  onPressed:
+                      loading
+                          ? null
+                          : connect,
+                  icon:
+                      const Icon(
+                    Icons.link,
+                  ),
+                  label:
+                      const Text(
+                    'اتصال',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // CARD GENERATOR CARD
+  // ==========================================================
+
+  Widget cardGeneratorCard() {
+    return Card(
+      elevation: 5,
+      child: Padding(
+        padding:
+            const EdgeInsets.all(
+          16,
+        ),
+        child: Column(
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.confirmation_num,
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Text(
+                  'إصدار الكروت',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            DropdownButtonFormField<
+                String>(
+              value:
+                  selectedProfile
+                          .isEmpty
+                      ? null
+                      : selectedProfile,
+              decoration:
+                  const InputDecoration(
+                labelText:
+                    'Hotspot Profile',
+                prefixIcon:
+                    Icon(
+                  Icons.speed,
+                ),
+              ),
+              items: profiles
+                  .map(
+                    (profile) {
+                      return DropdownMenuItem<
+                          String>(
+                        value: profile,
+                        child:
+                            Text(
+                          profile,
+                        ),
+                      );
+                    },
+                  )
+                  .toList(),
+              onChanged:
+                  connected
+                      ? (value) {
+                          if (value ==
+                              null) {
+                            return;
+                          }
+
+                          setState(() {
+                            selectedProfile =
+                                value;
+                          });
+                        }
+                      : null,
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            TextField(
+              controller:
+                  countController,
+              keyboardType:
+                  TextInputType
+                      .number,
+              decoration:
+                  const InputDecoration(
+                labelText:
+                    'عدد الكروت',
+                hintText:
+                    'من 1 إلى 5000',
+                prefixIcon:
+                    Icon(
+                  Icons.numbers,
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            SizedBox(
+              width:
+                  double.infinity,
+              height: 52,
+              child:
+                  FilledButton.icon(
+                onPressed:
+                    loading
+                        ? null
+                        : generateCards,
+                icon:
+                    const Icon(
+                  Icons.add_card,
+                ),
+                label: Text(
+                  loading
+                      ? 'جاري إنشاء الكروت...'
+                      : 'إنشاء الكروت',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // ACTION BUTTONS
+  // ==========================================================
+
+  Widget actionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child:
+              OutlinedButton.icon(
+            onPressed:
+                connected
+                    ? loadActiveUsers
+                    : null,
+            icon:
+                const Icon(
+              Icons.people,
+            ),
+            label:
+                const Text(
+              'المتصلون',
+            ),
+          ),
+        ),
+
+        const SizedBox(
+          width: 8,
+        ),
+
+        Expanded(
+          child:
+              OutlinedButton.icon(
+            onPressed:
+                connected
+                    ? searchUser
+                    : null,
+            icon:
+                const Icon(
+              Icons.search,
+            ),
+            label:
+                const Text(
+              'بحث',
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================
+  // CARDS PREVIEW
+  // ==========================================================
+
+  Widget cardsPreview() {
+    return Card(
+      child: Padding(
+        padding:
+            const EdgeInsets.all(
+          16,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'الكروت الجاهزة',
+                    style:
+                        TextStyle(
+                      fontSize: 18,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                Text(
+                  '${generatedCards.length}',
+                  style:
+                      const TextStyle(
+                    fontSize: 20,
+                    color:
+                        Colors.greenAccent,
+                    fontWeight:
+                        FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(
+              height: 10,
+            ),
+
+            if (generatedCards
+                .isEmpty)
+              const Padding(
+                padding:
+                    EdgeInsets.all(
+                  20,
+                ),
+                child: Text(
+                  'لم يتم إنشاء كروت بعد',
+                ),
+              )
+            else ...[
+              SizedBox(
+                height: 250,
+                child:
+                    ListView.builder(
+                  itemCount:
+                      generatedCards
+                          .length,
+                  itemBuilder:
+                      (_, index) {
+                    final card =
+                        generatedCards[
+                            index];
+
+                    return ListTile(
+                      leading:
+                          CircleAvatar(
+                        child: Text(
+                          '${index + 1}',
+                        ),
+                      ),
+                      title: Text(
+                        card.username,
+                      ),
+                      subtitle:
+                          Text(
+                        'Password: ${card.password}\n'
+                        'Profile: ${card.profile}',
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(
+                height: 10,
+              ),
+
+              SizedBox(
+                width:
+                    double.infinity,
+                height: 52,
+                child:
+                    FilledButton.icon(
+                  onPressed:
+                      loading
+                          ? null
+                          : printCards,
+                  icon:
+                      const Icon(
+                    Icons.print,
+                  ),
+                  label:
+                      const Text(
+                    'تصدير / طباعة PDF',
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
