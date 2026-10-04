@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace = "com.altabri.server"
+    namespace = "com.tbry.service"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -37,7 +37,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.altabri.server"
+        applicationId = "com.tbry.service"
         minSdk = 24
         targetSdk = 33
         versionCode = flutterVersionCode.toInteger()
