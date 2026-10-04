@@ -2,14 +2,20 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:router_os_client/router_os_client.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const WiTbryApp());
 }
+
+// ============================================================
+// APP
+// ============================================================
 
 class WiTbryApp extends StatelessWidget {
   const WiTbryApp({super.key});
@@ -34,7 +40,7 @@ class WiTbryApp extends StatelessWidget {
 }
 
 // ============================================================
-// CARD MODEL
+// HOTSPOT CARD
 // ============================================================
 
 class HotspotCard {
@@ -55,6 +61,7 @@ class HotspotCard {
 
 class MikroTikService {
   RouterOSClient? client;
+
   bool connected = false;
 
   Future<void> connect({
@@ -80,7 +87,9 @@ class MikroTikService {
     if (!result) {
       client = null;
       connected = false;
-      throw Exception('فشل تسجيل الدخول إلى MikroTik');
+      throw Exception(
+        'فشل تسجيل الدخول إلى MikroTik',
+      );
     }
 
     connected = true;
@@ -97,7 +106,9 @@ class MikroTikService {
 
   Future<List<Map<String, String>>> getProfiles() async {
     if (!connected || client == null) {
-      throw Exception('MikroTik غير متصل');
+      throw Exception(
+        'MikroTik غير متصل',
+      );
     }
 
     return await client!.talk(
@@ -107,7 +118,9 @@ class MikroTikService {
 
   Future<List<Map<String, String>>> getUsers() async {
     if (!connected || client == null) {
-      throw Exception('MikroTik غير متصل');
+      throw Exception(
+        'MikroTik غير متصل',
+      );
     }
 
     return await client!.talk(
@@ -117,7 +130,9 @@ class MikroTikService {
 
   Future<List<Map<String, String>>> getActiveUsers() async {
     if (!connected || client == null) {
-      throw Exception('MikroTik غير متصل');
+      throw Exception(
+        'MikroTik غير متصل',
+      );
     }
 
     return await client!.talk(
@@ -131,7 +146,9 @@ class MikroTikService {
     required String profile,
   }) async {
     if (!connected || client == null) {
-      throw Exception('MikroTik غير متصل');
+      throw Exception(
+        'MikroTik غير متصل',
+      );
     }
 
     await client!.talk(
@@ -144,9 +161,13 @@ class MikroTikService {
     );
   }
 
-  Future<void> removeUser(String username) async {
+  Future<void> removeUser(
+    String username,
+  ) async {
     if (!connected || client == null) {
-      throw Exception('MikroTik غير متصل');
+      throw Exception(
+        'MikroTik غير متصل',
+      );
     }
 
     final users = await client!.talk(
@@ -157,13 +178,17 @@ class MikroTikService {
     );
 
     if (users.isEmpty) {
-      throw Exception('الكرت غير موجود');
+      throw Exception(
+        'الكرت غير موجود',
+      );
     }
 
     final id = users.first['.id'];
 
     if (id == null) {
-      throw Exception('تعذر الحصول على ID الكرت');
+      throw Exception(
+        'تعذر الحصول على ID الكرت',
+      );
     }
 
     await client!.talk(
@@ -183,20 +208,26 @@ class CardGenerator {
   static final Random _random = Random();
 
   static String username() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const chars =
+        'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
     return List.generate(
       8,
-      (_) => chars[_random.nextInt(chars.length)],
+      (_) => chars[
+          _random.nextInt(chars.length)
+      ],
     ).join();
   }
 
   static String password() {
-    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const chars =
+        '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
     return List.generate(
       6,
-      (_) => chars[_random.nextInt(chars.length)],
+      (_) => chars[
+          _random.nextInt(chars.length)
+      ],
     ).join();
   }
 }
@@ -213,7 +244,8 @@ class PdfGenerator {
 
     const int columns = 3;
     const int rows = 4;
-    const int cardsPerPage = columns * rows;
+    const int cardsPerPage =
+        columns * rows;
 
     for (
       int start = 0;
@@ -225,13 +257,14 @@ class PdfGenerator {
         cards.length,
       );
 
-      final List<HotspotCard> pageCards =
+      final pageCards =
           cards.sublist(start, end);
 
       document.addPage(
         pw.Page(
           pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(18),
+          margin:
+              const pw.EdgeInsets.all(18),
           build: (context) {
             return pw.GridView(
               crossAxisCount: columns,
@@ -241,7 +274,8 @@ class PdfGenerator {
               children: List.generate(
                 cardsPerPage,
                 (index) {
-                  if (index >= pageCards.length) {
+                  if (index >=
+                      pageCards.length) {
                     return pw.Container();
                   }
 
@@ -265,9 +299,11 @@ class PdfGenerator {
     HotspotCard card,
   ) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
+      padding:
+          const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
-        borderRadius: pw.BorderRadius.circular(12),
+        borderRadius:
+            pw.BorderRadius.circular(12),
         border: pw.Border.all(
           color: PdfColors.blue900,
           width: 1,
@@ -283,7 +319,8 @@ class PdfGenerator {
             'Wi-Tbry',
             style: pw.TextStyle(
               fontSize: 16,
-              fontWeight: pw.FontWeight.bold,
+              fontWeight:
+                  pw.FontWeight.bold,
               color: PdfColors.blue900,
             ),
           ),
@@ -302,20 +339,25 @@ class PdfGenerator {
 
           pw.Container(
             padding:
-                const pw.EdgeInsets.symmetric(
+                const pw.EdgeInsets
+                    .symmetric(
               horizontal: 8,
               vertical: 4,
             ),
-            decoration: pw.BoxDecoration(
+            decoration:
+                pw.BoxDecoration(
               color: PdfColors.grey200,
               borderRadius:
-                  pw.BorderRadius.circular(5),
+                  pw.BorderRadius.circular(
+                5,
+              ),
             ),
             child: pw.Text(
               card.username,
               style: pw.TextStyle(
                 fontSize: 12,
-                fontWeight: pw.FontWeight.bold,
+                fontWeight:
+                    pw.FontWeight.bold,
               ),
             ),
           ),
@@ -324,7 +366,8 @@ class PdfGenerator {
 
           pw.Text(
             'Password: ${card.password}',
-            style: const pw.TextStyle(
+            style:
+                const pw.TextStyle(
               fontSize: 9,
             ),
           ),
@@ -333,9 +376,11 @@ class PdfGenerator {
 
           pw.Text(
             card.profile,
-            style: const pw.TextStyle(
+            style:
+                const pw.TextStyle(
               fontSize: 8,
-              color: PdfColors.grey700,
+              color:
+                  PdfColors.grey700,
             ),
           ),
         ],
@@ -352,40 +397,42 @@ class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() =>
+      _HomePageState();
 }
 
-// ============================================================
-// HOME PAGE STATE
-// ============================================================
-
-class _HomePageState extends State<HomePage> {
+class _HomePageState
+    extends State<HomePage> {
   final MikroTikService mikrotik =
       MikroTikService();
 
-  final TextEditingController hostController =
+  final TextEditingController
+      hostController =
       TextEditingController(
     text: '10.10.10.1',
   );
 
-  final TextEditingController userController =
+  final TextEditingController
+      userController =
       TextEditingController();
 
-  final TextEditingController passwordController =
+  final TextEditingController
+      passwordController =
       TextEditingController();
 
-  final TextEditingController portController =
+  final TextEditingController
+      portController =
       TextEditingController(
     text: '8729',
   );
 
-  final TextEditingController countController =
+  final TextEditingController
+      countController =
       TextEditingController(
     text: '10',
   );
 
   bool ssl = true;
-
   bool loading = false;
 
   String status = 'غير متصل';
@@ -396,13 +443,11 @@ class _HomePageState extends State<HomePage> {
 
   List<HotspotCard> generatedCards = [];
 
-  List<Map<String, String>> activeUsers = [];
+  List<Map<String, String>>
+      activeUsers = [];
 
-  bool get connected => mikrotik.connected;
-
-  // ==========================================================
-  // DISPOSE
-  // ==========================================================
+  bool get connected =>
+      mikrotik.connected;
 
   @override
   void dispose() {
@@ -429,31 +474,35 @@ class _HomePageState extends State<HomePage> {
 
     try {
       await mikrotik.connect(
-        host: hostController.text.trim(),
-        username: userController.text.trim(),
-        password: passwordController.text,
-        port: int.tryParse(
-              portController.text,
-            ) ??
-            8729,
+        host:
+            hostController.text.trim(),
+        username:
+            userController.text.trim(),
+        password:
+            passwordController.text,
+        port:
+            int.tryParse(
+                  portController.text,
+                ) ??
+                8729,
         ssl: ssl,
       );
 
       final result =
           await mikrotik.getProfiles();
 
-      final List<String> names = result
-          .map(
-            (e) => e['name'],
-          )
-          .whereType<String>()
-          .toList();
+      final List<String> names =
+          result
+              .map(
+                (e) => e['name'],
+              )
+              .whereType<String>()
+              .toList();
 
       if (!mounted) return;
 
       setState(() {
         status = 'متصل';
-
         profiles = names;
 
         if (profiles.isNotEmpty) {
@@ -519,9 +568,12 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final List<HotspotCard> cards = [];
+      final List<HotspotCard> cards =
+          [];
 
-      for (int i = 0; i < count; i++) {
+      for (int i = 0;
+          i < count;
+          i++) {
         final String username =
             CardGenerator.username();
 
@@ -538,7 +590,8 @@ class _HomePageState extends State<HomePage> {
           HotspotCard(
             username: username,
             password: password,
-            profile: selectedProfile,
+            profile:
+                selectedProfile,
           ),
         );
       }
@@ -571,7 +624,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // PRINT CARDS
+  // PRINT
   // ==========================================================
 
   Future<void> printCards() async {
@@ -584,13 +637,15 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final Uint8List pdf =
-          await PdfGenerator.createCardsPdf(
+          await PdfGenerator
+              .createCardsPdf(
         generatedCards,
       );
 
       await Printing.layoutPdf(
         onLayout: (_) async => pdf,
-        name: 'Wi-Tbry-Cards.pdf',
+        name:
+            'Wi-Tbry-Cards.pdf',
       );
     } catch (e) {
       showError(
@@ -613,7 +668,8 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final result =
-          await mikrotik.getActiveUsers();
+          await mikrotik
+              .getActiveUsers();
 
       if (!mounted) return;
 
@@ -630,7 +686,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // SEARCH USER
+  // SEARCH
   // ==========================================================
 
   Future<void> searchUser() async {
@@ -645,7 +701,8 @@ class _HomePageState extends State<HomePage> {
         await showDialog<String>(
       context: context,
       builder: (context) {
-        final TextEditingController controller =
+        final TextEditingController
+            controller =
             TextEditingController();
 
         return AlertDialog(
@@ -675,7 +732,8 @@ class _HomePageState extends State<HomePage> {
               onPressed: () {
                 Navigator.pop(
                   context,
-                  controller.text.trim(),
+                  controller.text
+                      .trim(),
                 );
               },
               child: const Text(
@@ -746,7 +804,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // SHOW ACTIVE USERS
+  // ACTIVE USERS DIALOG
   // ==========================================================
 
   void showActiveUsers() {
@@ -778,40 +836,42 @@ class _HomePageState extends State<HomePage> {
               const Divider(),
 
               Expanded(
-                child: activeUsers.isEmpty
-                    ? const Center(
-                        child: Text(
-                          'لا يوجد مستخدمون متصلون',
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount:
-                            activeUsers.length,
-                        itemBuilder:
-                            (_, index) {
-                          final u =
-                              activeUsers[
-                                  index];
+                child:
+                    activeUsers.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'لا يوجد مستخدمون متصلون',
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount:
+                                activeUsers.length,
+                            itemBuilder:
+                                (_, index) {
+                              final u =
+                                  activeUsers[
+                                      index];
 
-                          return ListTile(
-                            leading:
-                                const Icon(
-                              Icons.person,
-                              color: Colors
-                                  .green,
-                            ),
-                            title: Text(
-                              u['user'] ??
-                                  u['name'] ??
-                                  'Unknown',
-                            ),
-                            subtitle:
-                                Text(
-                              'IP: ${u['address'] ?? '-'}',
-                            ),
-                          );
-                        },
-                      ),
+                              return ListTile(
+                                leading:
+                                    const Icon(
+                                  Icons.person,
+                                  color: Colors
+                                      .green,
+                                ),
+                                title:
+                                    Text(
+                                  u['user'] ??
+                                      u['name'] ??
+                                      'Unknown',
+                                ),
+                                subtitle:
+                                    Text(
+                                  'IP: ${u['address'] ?? '-'}',
+                                ),
+                              );
+                            },
+                          ),
               ),
             ],
           ),
@@ -860,6 +920,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         centerTitle: true,
+
         actions: [
           Icon(
             connected
@@ -869,8 +930,26 @@ class _HomePageState extends State<HomePage> {
                 ? Colors.greenAccent
                 : Colors.redAccent,
           ),
+
+          IconButton(
+            tooltip:
+                'عن التطبيق',
+            icon: const Icon(
+              Icons.info_outline,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      const AboutPage(),
+                ),
+              );
+            },
+          ),
+
           const SizedBox(
-            width: 15,
+            width: 8,
           ),
         ],
       ),
@@ -1028,6 +1107,7 @@ class _HomePageState extends State<HomePage> {
                     const Text(
                       'SSL',
                     ),
+
                     Switch(
                       value: ssl,
                       onChanged:
@@ -1093,7 +1173,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   // ==========================================================
-  // CARD GENERATOR CARD
+  // CARD GENERATOR
   // ==========================================================
 
   Widget cardGeneratorCard() {
@@ -1136,6 +1216,7 @@ class _HomePageState extends State<HomePage> {
                           .isEmpty
                       ? null
                       : selectedProfile,
+
               decoration:
                   const InputDecoration(
                 labelText:
@@ -1145,6 +1226,7 @@ class _HomePageState extends State<HomePage> {
                   Icons.speed,
                 ),
               ),
+
               items: profiles
                   .map(
                     (profile) {
@@ -1159,6 +1241,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   )
                   .toList(),
+
               onChanged:
                   connected
                       ? (value) {
@@ -1356,9 +1439,11 @@ class _HomePageState extends State<HomePage> {
                           '${index + 1}',
                         ),
                       ),
+
                       title: Text(
                         card.username,
                       ),
+
                       subtitle:
                           Text(
                         'Password: ${card.password}\n'
@@ -1394,6 +1479,1055 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// ABOUT PAGE
+// ============================================================
+
+class AboutPage extends StatefulWidget {
+  const AboutPage({super.key});
+
+  @override
+  State<AboutPage> createState() =>
+      _AboutPageState();
+}
+
+class _AboutPageState
+    extends State<AboutPage> {
+  String appVersion =
+      'جاري التحميل...';
+
+  static const String developerName =
+      'حمزة الطيب';
+
+  static const String whatsappNumber =
+      '249916537047';
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadAppVersion();
+  }
+
+  // ==========================================================
+  // APP VERSION
+  // ==========================================================
+
+  Future<void> loadAppVersion() async {
+    try {
+      final info =
+          await PackageInfo
+              .fromPlatform();
+
+      if (!mounted) return;
+
+      setState(() {
+        appVersion =
+            '${info.version} (${info.buildNumber})';
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        appVersion =
+            'غير معروف';
+      });
+    }
+  }
+
+  // ==========================================================
+  // WHATSAPP
+  // ==========================================================
+
+  Future<void> openWhatsApp() async {
+    final Uri url = Uri.parse(
+      'https://wa.me/$whatsappNumber',
+    );
+
+    try {
+      final launched =
+          await launchUrl(
+        url,
+        mode:
+            LaunchMode
+                .externalApplication,
+      );
+
+      if (!launched &&
+          mounted) {
+        showError(
+          'تعذر فتح واتساب',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        showError(
+          'تعذر فتح واتساب',
+        );
+      }
+    }
+  }
+
+  // ==========================================================
+  // CONTACT
+  // ==========================================================
+
+  Future<void> openContact() async {
+    final Uri url =
+        Uri.parse(
+      'https://wa.me/$whatsappNumber',
+    );
+
+    try {
+      final launched =
+          await launchUrl(
+        url,
+        mode:
+            LaunchMode
+                .externalApplication,
+      );
+
+      if (!launched &&
+          mounted) {
+        showError(
+          'تعذر فتح صفحة التواصل',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        showError(
+          'تعذر فتح صفحة التواصل',
+        );
+      }
+    }
+  }
+
+  // ==========================================================
+  // ERROR
+  // ==========================================================
+
+  void showError(
+    String message,
+  ) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(
+      SnackBar(
+        backgroundColor:
+            Colors.red.shade800,
+        content: Text(
+          message,
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================
+  // BUILD
+  // ==========================================================
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'عن التطبيق',
+        ),
+        centerTitle: true,
+      ),
+
+      body:
+          SingleChildScrollView(
+        padding:
+            const EdgeInsets.all(
+          20,
+        ),
+        child: Column(
+          children: [
+
+            const SizedBox(
+              height: 20,
+            ),
+
+            // =================================================
+            // LOGO
+            // =================================================
+
+            Container(
+              width: 120,
+              height: 120,
+              decoration:
+                  BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(
+                  32,
+                ),
+                gradient:
+                    const LinearGradient(
+                  begin:
+                      Alignment.topLeft,
+                  end: Alignment
+                      .bottomRight,
+                  colors: [
+                    Color(
+                      0xFF4016F9,
+                    ),
+                    Color(
+                      0xFF1677FF,
+                    ),
+                  ],
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    blurRadius: 25,
+                    spreadRadius: 2,
+                    color:
+                        Colors.black45,
+                  ),
+                ],
+              ),
+
+              child: const Icon(
+                Icons.wifi_rounded,
+                size: 68,
+                color:
+                    Colors.white,
+              ),
+            ),
+
+            const SizedBox(
+              height: 18,
+            ),
+
+            const Text(
+              'Wi-Tbry',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(
+              height: 5,
+            ),
+
+            const Text(
+              'MikroTik Hotspot Manager',
+              style: TextStyle(
+                fontSize: 15,
+                color:
+                    Colors.white70,
+              ),
+            ),
+
+            const SizedBox(
+              height: 8,
+            ),
+
+            // =================================================
+            // VERSION
+            // =================================================
+
+            Container(
+              padding:
+                  const EdgeInsets
+                      .symmetric(
+                horizontal: 14,
+                vertical: 7,
+              ),
+              decoration:
+                  BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(
+                  20,
+                ),
+                color:
+                    Colors.white10,
+              ),
+              child: Text(
+                'الإصدار $appVersion',
+                style:
+                    const TextStyle(
+                  color:
+                      Colors.white70,
+                  fontWeight:
+                      FontWeight.w500,
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 25,
+            ),
+
+            // =================================================
+            // ABOUT
+            // =================================================
+
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(
+                  18,
+                ),
+                child: Column(
+                  children: const [
+
+                    Text(
+                      'عن Wi-Tbry',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+
+                    SizedBox(
+                      height: 12,
+                    ),
+
+                    Text(
+                      'Wi-Tbry هو تطبيق متخصص في إدارة شبكات '
+                      'MikroTik Hotspot وتسهيل إنشاء وإدارة '
+                      'وطباعة بطاقات الإنترنت من الهاتف عبر '
+                      'الشبكة المحلية. تم تطويره لتقديم حلول '
+                      'عملية وبسيطة لأصحاب الشبكات ومقدمي '
+                      'خدمات الإنترنت.',
+                      textAlign:
+                          TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.7,
+                        color:
+                            Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            // =================================================
+            // FEATURES
+            // =================================================
+
+            Card(
+              elevation: 4,
+              child: Column(
+                children: const [
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.add_card,
+                      color:
+                          Colors.blueAccent,
+                    ),
+                    title: Text(
+                      'إنشاء بطاقات Hotspot',
+                    ),
+                    subtitle: Text(
+                      'إنشاء عدد كبير من بطاقات المستخدمين.',
+                    ),
+                  ),
+
+                  Divider(
+                    height: 1,
+                  ),
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.print,
+                      color:
+                          Colors.greenAccent,
+                    ),
+                    title: Text(
+                      'طباعة البطاقات',
+                    ),
+                    subtitle: Text(
+                      'تصدير البطاقات بصيغة PDF والطباعة.',
+                    ),
+                  ),
+
+                  Divider(
+                    height: 1,
+                  ),
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.people,
+                      color:
+                          Colors.orangeAccent,
+                    ),
+                    title: Text(
+                      'المستخدمون المتصلون',
+                    ),
+                    subtitle: Text(
+                      'عرض المستخدمين المتصلين حاليًا.',
+                    ),
+                  ),
+
+                  Divider(
+                    height: 1,
+                  ),
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.search,
+                      color:
+                          Colors.purpleAccent,
+                    ),
+                    title: Text(
+                      'البحث عن البطاقات',
+                    ),
+                    subtitle: Text(
+                      'البحث عن المستخدمين داخل MikroTik.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            // =================================================
+            // DEVELOPER
+            // =================================================
+
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(
+                  18,
+                ),
+                child: Column(
+                  children: [
+
+                    const CircleAvatar(
+                      radius: 35,
+                      child: Icon(
+                        Icons.person,
+                        size: 40,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 12,
+                    ),
+
+                    const Text(
+                      'حمزة الطيب',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 8,
+                    ),
+
+                    const Text(
+                      'مهتم بحلول الشبكات والإنترنت وتطوير '
+                      'الأدوات والتطبيقات التي تساعد في إدارة '
+                      'الشبكات وتقديم خدمات الإنترنت بسهولة '
+                      'وكفاءة.',
+                      textAlign:
+                          TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.6,
+                        color:
+                            Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            // =================================================
+            // CONTACT
+            // =================================================
+
+            Card(
+              elevation: 4,
+              child: Padding(
+                padding:
+                    const EdgeInsets.all(
+                  16,
+                ),
+                child: Column(
+                  children: [
+
+                    const Text(
+                      'تواصل معنا',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight:
+                            FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 15,
+                    ),
+
+                    SizedBox(
+                      width:
+                          double.infinity,
+                      height: 52,
+                      child:
+                          FilledButton
+                              .icon(
+                        onPressed:
+                            openWhatsApp,
+                        icon:
+                            const Icon(
+                          Icons.chat,
+                        ),
+                        label:
+                            const Text(
+                          'تواصل عبر واتساب',
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    SizedBox(
+                      width:
+                          double.infinity,
+                      height: 52,
+                      child:
+                          OutlinedButton
+                              .icon(
+                        onPressed:
+                            openContact,
+                        icon:
+                            const Icon(
+                          Icons.contact_page,
+                        ),
+                        label:
+                            const Text(
+                          'صفحة التواصل',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 15,
+            ),
+
+            // =================================================
+            // TERMS & PRIVACY
+            // =================================================
+
+            Card(
+              child: Column(
+                children: [
+
+                  ListTile(
+                    leading:
+                        const Icon(
+                      Icons
+                          .description_outlined,
+                    ),
+                    title:
+                        const Text(
+                      'شروط الاستخدام',
+                    ),
+                    trailing:
+                        const Icon(
+                      Icons
+                          .chevron_right,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const TermsPage(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  const Divider(
+                    height: 1,
+                  ),
+
+                  ListTile(
+                    leading:
+                        const Icon(
+                      Icons
+                          .privacy_tip_outlined,
+                    ),
+                    title:
+                        const Text(
+                      'سياسة الخصوصية',
+                    ),
+                    trailing:
+                        const Icon(
+                      Icons
+                          .chevron_right,
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              const PrivacyPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(
+              height: 25,
+            ),
+
+            const Text(
+              '© 2026 Wi-Tbry',
+              style: TextStyle(
+                color:
+                    Colors.white54,
+              ),
+            ),
+
+            const SizedBox(
+              height: 5,
+            ),
+
+            const Text(
+              'جميع الحقوق محفوظة',
+              style: TextStyle(
+                color:
+                    Colors.white38,
+              ),
+            ),
+
+            const SizedBox(
+              height: 20,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// TERMS PAGE
+// ============================================================
+
+class TermsPage
+    extends StatelessWidget {
+  const TermsPage({super.key});
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      appBar: AppBar(
+        title:
+            const Text(
+          'شروط الاستخدام',
+        ),
+        centerTitle: true,
+      ),
+
+      body:
+          SingleChildScrollView(
+        padding:
+            const EdgeInsets.all(
+          20,
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+          children: const [
+
+            Text(
+              'شروط استخدام Wi-Tbry',
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '1. استخدام التطبيق',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'يُستخدم Wi-Tbry لإدارة أجهزة MikroTik Hotspot '
+              'التي يملك المستخدم صلاحية إدارتها أو لديه إذن '
+              'صريح لإدارتها.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '2. بيانات الدخول',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'المستخدم مسؤول عن بيانات الدخول إلى جهاز MikroTik '
+              'وعن المحافظة على سرية اسم المستخدم وكلمة المرور.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '3. مسؤولية المستخدم',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'يجب استخدام التطبيق بطريقة قانونية وعدم استخدامه '
+              'للدخول غير المصرح به إلى أي شبكة أو جهاز.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '4. البطاقات',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'المستخدم مسؤول عن البطاقات التي يتم إنشاؤها من '
+              'خلال التطبيق وعن استخدامها وإدارتها.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '5. التحديثات',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'قد يتم تحديث التطبيق وإضافة ميزات جديدة أو تعديل '
+              'الميزات الحالية لتحسين الأداء والأمان.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 30,
+            ),
+
+            Text(
+              'آخر تحديث: 2026',
+              style: TextStyle(
+                color:
+                    Colors.white54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+// PRIVACY PAGE
+// ============================================================
+
+class PrivacyPage
+    extends StatelessWidget {
+  const PrivacyPage({super.key});
+
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      appBar: AppBar(
+        title:
+            const Text(
+          'سياسة الخصوصية',
+        ),
+        centerTitle: true,
+      ),
+
+      body:
+          SingleChildScrollView(
+        padding:
+            const EdgeInsets.all(
+          20,
+        ),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment
+                  .start,
+          children: const [
+
+            Text(
+              'سياسة الخصوصية',
+              style: TextStyle(
+                fontSize: 25,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '1. البيانات التي يستخدمها التطبيق',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'يحتاج Wi-Tbry إلى بيانات الاتصال التي يدخلها '
+              'المستخدم للوصول إلى جهاز MikroTik، مثل عنوان '
+              'الجهاز واسم المستخدم وكلمة المرور.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '2. الاتصال بالشبكة',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'يتصل التطبيق بجهاز MikroTik عبر RouterOS API '
+              'لإدارة المستخدمين والبطاقات وعرض المعلومات '
+              'المطلوبة من الجهاز.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '3. عدم بيع البيانات',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'لا يبيع التطبيق بيانات المستخدم أو معلومات '
+              'الشبكة إلى أطراف أخرى.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '4. بيانات الشبكة',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'معلومات المستخدمين والبطاقات الموجودة على MikroTik '
+              'تظل مرتبطة بجهاز الشبكة الذي يديره المستخدم. '
+              'يجب على المستخدم حماية جهازه وبيانات الدخول الخاصة به.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 20,
+            ),
+
+            Text(
+              '5. الأمان',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight:
+                    FontWeight.bold,
+              ),
+            ),
+
+            SizedBox(
+              height: 8,
+            ),
+
+            Text(
+              'يُنصح باستخدام API-SSL عندما يكون متاحًا، '
+              'واستخدام حساب MikroTik بصلاحيات مناسبة بدلًا '
+              'من مشاركة حساب المدير الرئيسي.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.7,
+              ),
+            ),
+
+            SizedBox(
+              height: 30,
+            ),
+
+            Text(
+              'آخر تحديث: 2026',
+              style: TextStyle(
+                color:
+                    Colors.white54,
+              ),
+            ),
           ],
         ),
       ),
