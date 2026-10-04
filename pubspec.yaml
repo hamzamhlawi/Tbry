@@ -1,15 +1,19 @@
-name: tbry
-description: A professional task manager built with Flutter.
-publish_to: 'none'
+name: wi_tbry
+description: Wi-Tbry MikroTik Hotspot Card Manager
+publish_to: "none"
+
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  shared_preferences: ^2.2.2
+
+  router_os_client: ^2.0.1
+  pdf: ^3.11.3
+  printing: ^5.13.4
 
 flutter:
   uses-material-design: true
